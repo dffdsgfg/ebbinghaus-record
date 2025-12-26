@@ -1,0 +1,1316 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>艾宾浩斯单词背诵记录系统</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Microsoft YaHei", sans-serif;
+        }
+        
+        body {
+            padding: 10px;
+            background-color: #f5f5f5;
+            font-size: 14px;
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .header h1 {
+            font-size: 18px;
+            flex: 1;
+        }
+        
+        .header-actions {
+            display: flex;
+            gap: 8px;
+        }
+        
+        /* 部分目录样式 */
+        .section-directory {
+            margin: 15px 0;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-radius: 6px;
+            border: 1px solid #eee;
+            max-height: 150px;
+            overflow-y: auto;
+        }
+        
+        .section-directory h3 {
+            font-size: 14px;
+            margin-bottom: 8px;
+            color: #333;
+        }
+        
+        .section-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+        
+        .section-tag {
+            padding: 4px 10px;
+            background-color: #e9f7fe;
+            border-radius: 4px;
+            font-size: 12px;
+            cursor: pointer;
+            border: 1px solid #d1ecf1;
+        }
+        
+        .section-tag.active {
+            background-color: #409eff;
+            color: white;
+            border-color: #409eff;
+        }
+        
+        .section-tag:hover {
+            background-color: #d1ecf1;
+        }
+        
+        .section-tag.active:hover {
+            background-color: #66b1ff;
+        }
+        
+        .add-section-btn {
+            padding: 4px 10px;
+            background-color: #67c23a;
+            color: white;
+            border-radius: 4px;
+            font-size: 12px;
+            cursor: pointer;
+            border: none;
+            margin-top: 8px;
+        }
+        
+        .section-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .section-name-input {
+            padding: 5px 8px;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+            font-size: 12px;
+            width: 150px;
+        }
+        
+        button {
+            padding: 8px 12px;
+            background-color: #409eff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            font-size: 13px;
+            flex-shrink: 0;
+        }
+        
+        button:hover {
+            background-color: #66b1ff;
+        }
+        
+        button.secondary {
+            background-color: #909399;
+        }
+        
+        button.secondary:hover {
+            background-color: #a6a9ad;
+        }
+        
+        button.edit-mode {
+            background-color: #67c23a;
+        }
+        
+        button.edit-mode:hover {
+            background-color: #85ce61;
+        }
+        
+        button.stats-btn {
+            background-color: #f56c6c;
+        }
+        
+        button.stats-btn:hover {
+            background-color: #f78989;
+        }
+        
+        /* 日期选择按钮样式 */
+        .date-picker-btn {
+            padding: 4px 8px;
+            background-color: #f0f9ff;
+            border: 1px solid #409eff;
+            color: #409eff;
+            border-radius: 3px;
+            font-size: 12px;
+            cursor: pointer;
+            width: 100%;
+        }
+        
+        .date-picker-btn:hover {
+            background-color: #e6f7ff;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 15px;
+            font-size: 13px;
+        }
+        
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px 5px;
+            text-align: center;
+        }
+        
+        th {
+            background-color: #e9f7fe;
+            font-weight: bold;
+            position: relative;
+            font-size: 12px;
+        }
+        
+        td {
+            cursor: pointer;
+            word-break: break-all;
+        }
+        
+        td:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .completed {
+            background-color: #e1f5fe;
+            font-weight: bold;
+            color: #409eff;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .modal-content {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 800px;
+            max-height: 85vh;
+            overflow-y: auto;
+        }
+        
+        /* 统计弹窗样式 */
+        #stats-modal .modal-content {
+            max-width: 1000px;
+            width: 95%;
+        }
+        
+        .stats-summary {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .stats-card {
+            flex: 1;
+            min-width: 150px;
+            padding: 12px;
+            background-color: #f8f9fa;
+            border-radius: 6px;
+            border-left: 4px solid #409eff;
+        }
+        
+        .stats-card h4 {
+            font-size: 14px;
+            margin-bottom: 8px;
+            color: #666;
+        }
+        
+        .stats-card .value {
+            font-size: 20px;
+            font-weight: bold;
+            color: #409eff;
+        }
+        
+        .stats-table-container {
+            max-height: 60vh;
+            overflow-y: auto;
+        }
+        
+        .stats-table {
+            min-width: 800px;
+        }
+        
+        .stats-table th {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        
+        .progress-0 { background-color: #fff5f5; color: #f56c6c; }
+        .progress-1 { background-color: #fffbf0; color: #e6a23c; }
+        .progress-2 { background-color: #f0f9ff; color: #409eff; }
+        .progress-3 { background-color: #e8f4f8; color: #36cfc9; }
+        .progress-4 { background-color: #f0f9ff; color: #409eff; }
+        .progress-5 { background-color: #f0f9ff; color: #409eff; }
+        .progress-6 { background-color: #f0f8fb; color: #1989fa; }
+        
+        .close-modal {
+            float: right;
+            font-size: 24px;
+            cursor: pointer;
+            color: #999;
+        }
+        
+        .close-modal:hover {
+            color: #333;
+        }
+        
+        .student-detail h3 {
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+            font-size: 16px;
+        }
+        
+        .student-detail h4 {
+            font-size: 14px;
+            margin: 10px 0;
+        }
+        
+        /* 艾宾浩斯复习时间提示 */
+        .review-tip {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            background: #fff;
+            border: 1px solid #ddd;
+            padding: 5px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            color: #666;
+            white-space: nowrap;
+            display: none;
+            z-index: 10;
+        }
+        
+        th:hover .review-tip {
+            display: block;
+        }
+        
+        /* 密码弹窗样式 */
+        #password-modal .modal-content {
+            width: 80%;
+            max-width: 400px;
+        }
+        
+        .password-input {
+            width: 100%;
+            padding: 10px;
+            margin: 15px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+            text-align: center;
+        }
+        
+        .error {
+            color: red;
+            margin-top: 10px;
+            display: none;
+        }
+        
+        /* 时间输入样式 */
+        .date-input {
+            width: 100%;
+            padding: 5px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+            font-size: 12px;
+            text-align: center;
+            display: none;
+        }
+        
+        .batch-date-input {
+            padding: 6px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+            font-size: 12px;
+        }
+        
+        /* 只读模式样式 */
+        .read-only td:not(.name-cell) {
+            background-color: #f9f9f9;
+            cursor: not-allowed;
+        }
+        
+        .edit-status {
+            margin-bottom: 10px;
+            padding: 8px;
+            border-radius: 4px;
+            font-size: 13px;
+            text-align: center;
+        }
+        
+        .status-view {
+            background-color: #f5f5f5;
+            color: #666;
+        }
+        
+        .status-edit {
+            background-color: #f0f9ff;
+            color: #409eff;
+        }
+        
+        /* 批量设置区域 */
+        .batch-set-container {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        
+        /* 导入学生弹窗样式 */
+        #import-modal .modal-content {
+            width: 80%;
+            max-width: 500px;
+        }
+        
+        .import-textarea {
+            width: 100%;
+            padding: 10px;
+            margin: 15px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            resize: vertical;
+            min-height: 150px;
+            font-size: 14px;
+        }
+        
+        .success {
+            color: green;
+            margin-top: 10px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>艾宾浩斯单词背诵记录系统</h1>
+            <div class="header-actions">
+                <button id="import-btn">导入学生</button>
+                <button id="view-stats-btn" class="stats-btn">查看完成情况</button>
+                <button id="edit-mode-btn" class="edit-mode">编辑模式</button>
+            </div>
+        </div>
+        
+        <!-- 编辑状态提示 -->
+        <div class="edit-status status-view" id="edit-status">
+            当前为查看模式，点击"编辑模式"按钮并输入密码可修改记录
+        </div>
+        
+        <!-- 部分目录导航 -->
+        <div class="section-directory">
+            <h3>单词部分目录</h3>
+            <div class="section-tags" id="section-tags">
+                <!-- 动态生成部分标签 -->
+            </div>
+            <button class="add-section-btn" id="add-section-btn" disabled>新增部分</button>
+        </div>
+        
+        <!-- 部分名称设置 -->
+        <div class="section-info">
+            <span>当前部分：</span>
+            <input type="text" class="section-name-input" id="section-name-input" placeholder="输入部分名称（如：Unit1）">
+            <button id="save-section-name" disabled>保存名称</button>
+            <span id="current-section-display">未命名部分 1</span>
+        </div>
+        
+        <!-- 批量设置第一遍时间 -->
+        <div class="batch-set-container" id="batch-set-container" style="display: none;">
+            <span>统一设置所有学生第一遍时间：</span>
+            <input type="date" class="batch-date-input" id="batch-first-date">
+            <button id="batch-set-btn">应用到所有学生</button>
+        </div>
+        
+        <!-- 背诵记录表格 -->
+        <div class="table-container">
+            <table id="review-table">
+                <thead>
+                    <tr>
+                        <th>学生姓名</th>
+                        <th>第1遍<span class="review-tip">点击按钮选择背诵时间</span></th>
+                        <th>第2遍<span class="review-tip">第1遍+1天</span></th>
+                        <th>第3遍<span class="review-tip">第1遍+2天</span></th>
+                        <th>第4遍<span class="review-tip">第1遍+7天</span></th>
+                        <th>第5遍<span class="review-tip">第1遍+15天</span></th>
+                        <th>第6遍<span class="review-tip">第1遍+30天</span></th>
+                    </tr>
+                </thead>
+                <tbody id="table-body" class="read-only">
+                    <!-- 学生数据将动态生成 -->
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- 学生详情弹窗 -->
+        <div class="modal" id="student-modal">
+            <div class="modal-content">
+                <span class="close-modal" id="close-modal">&times;</span>
+                <div class="student-detail" id="student-detail">
+                    <!-- 学生详情内容将动态生成 -->
+                </div>
+            </div>
+        </div>
+        
+        <!-- 密码验证弹窗 -->
+        <div class="modal" id="password-modal">
+            <div class="modal-content">
+                <span class="close-modal" id="close-password-modal">&times;</span>
+                <h3>请输入编辑密码</h3>
+                <input type="password" class="password-input" id="password-input" placeholder="输入密码">
+                <button id="confirm-password">确认</button>
+                <div class="error" id="password-error">❌ 密码错误，请重试！</div>
+            </div>
+        </div>
+        
+        <!-- 导入学生弹窗 -->
+        <div class="modal" id="import-modal">
+            <div class="modal-content">
+                <span class="close-modal" id="close-import-modal">&times;</span>
+                <h3>导入学生名单</h3>
+                <p>请粘贴学生姓名，每行一个</p>
+                <textarea class="import-textarea" id="student-list-input" placeholder="例如：
+张三
+李四
+王五"></textarea>
+                <button id="confirm-import">确认导入</button>
+                <div class="success" id="import-success">✅ 导入成功！</div>
+                <div class="error" id="import-error">❌ 请输入有效的学生名单！</div>
+            </div>
+        </div>
+        
+        <!-- 日期选择弹窗 -->
+        <div class="modal" id="date-picker-modal">
+            <div class="modal-content" style="max-width: 300px;">
+                <span class="close-modal" id="close-date-modal">&times;</span>
+                <h3 style="font-size: 16px; margin-bottom: 15px;">选择背诵日期</h3>
+                <input type="date" id="selected-date" style="width: 100%; padding: 8px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 4px;">
+                <button id="confirm-date">确认选择</button>
+                <button id="confirm-date-and-mark" style="background-color: #67c23a; margin-left: 8px;">确认并标记完成</button>
+            </div>
+        </div>
+        
+        <!-- 完成情况统计弹窗 -->
+        <div class="modal" id="stats-modal">
+            <div class="modal-content">
+                <span class="close-modal" id="close-stats-modal">&times;</span>
+                <h3 style="font-size: 18px; margin-bottom: 20px;">所有学生背诵完成情况统计</h3>
+                
+                <!-- 统计概览 -->
+                <div class="stats-summary">
+                    <div class="stats-card">
+                        <h4>总学生数</h4>
+                        <div class="value" id="total-students">0</div>
+                    </div>
+                    <div class="stats-card">
+                        <h4>总单词部分数</h4>
+                        <div class="value" id="total-sections">0</div>
+                    </div>
+                    <div class="stats-card">
+                        <h4>平均完成进度</h4>
+                        <div class="value" id="avg-progress">0%</div>
+                    </div>
+                    <div class="stats-card">
+                        <h4>全部完成人数</h4>
+                        <div class="value" id="completed-students">0</div>
+                    </div>
+                </div>
+                
+                <!-- 详细统计表 -->
+                <div class="stats-table-container">
+                    <table class="stats-table" id="stats-table">
+                        <thead>
+                            <tr>
+                                <th rowspan="2">学生姓名</th>
+                                <th colspan="7">完成情况</th>
+                                <th rowspan="2">完成进度</th>
+                            </tr>
+                            <tr id="stats-section-headers">
+                                <!-- 动态生成部分表头 -->
+                            </tr>
+                        </thead>
+                        <tbody id="stats-table-body">
+                            <!-- 动态生成统计数据 -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 初始化数据
+        let currentSection = 1; // 当前显示的单词部分
+        let totalSections = 1;  // 总单词部分数
+        let students = [];      // 学生列表
+        let reviewRecords = {}; // 背诵记录
+        let sectionNames = {};  // 部分名称 {1: "Unit1", 2: "Unit2"...}
+        let isEditMode = false; // 是否为编辑模式
+        const EDIT_PASSWORD = '0000'; // 编辑密码
+        // 日期选择弹窗相关
+        let currentDatePickerStudent = '';
+        let currentDatePickerSection = '';
+        let currentStudentOriginalDate = ''; // 保存学生原本的日期
+        
+        // DOM元素
+        const tableBody = document.getElementById('table-body');
+        const editModeBtn = document.getElementById('edit-mode-btn');
+        const editStatus = document.getElementById('edit-status');
+        const passwordModal = document.getElementById('password-modal');
+        const passwordInput = document.getElementById('password-input');
+        const confirmPasswordBtn = document.getElementById('confirm-password');
+        const passwordError = document.getElementById('password-error');
+        const closePasswordModal = document.getElementById('close-password-modal');
+        const batchSetContainer = document.getElementById('batch-set-container');
+        const batchFirstDate = document.getElementById('batch-first-date');
+        const batchSetBtn = document.getElementById('batch-set-btn');
+        const studentModal = document.getElementById('student-modal');
+        const closeModal = document.getElementById('close-modal');
+        const studentDetail = document.getElementById('student-detail');
+        const importBtn = document.getElementById('import-btn');
+        const importModal = document.getElementById('import-modal');
+        const closeImportModal = document.getElementById('close-import-modal');
+        const studentListInput = document.getElementById('student-list-input');
+        const confirmImportBtn = document.getElementById('confirm-import');
+        const importSuccess = document.getElementById('import-success');
+        const importError = document.getElementById('import-error');
+        const sectionNameInput = document.getElementById('section-name-input');
+        const saveSectionNameBtn = document.getElementById('save-section-name');
+        const currentSectionDisplay = document.getElementById('current-section-display');
+        const sectionTags = document.getElementById('section-tags');
+        const addSectionBtn = document.getElementById('add-section-btn');
+        // 日期选择弹窗元素
+        const datePickerModal = document.getElementById('date-picker-modal');
+        const selectedDateInput = document.getElementById('selected-date');
+        const confirmDateBtn = document.getElementById('confirm-date');
+        const confirmDateAndMarkBtn = document.getElementById('confirm-date-and-mark');
+        const closeDateModal = document.getElementById('close-date-modal');
+        // 统计弹窗元素
+        const statsModal = document.getElementById('stats-modal');
+        const viewStatsBtn = document.getElementById('view-stats-btn');
+        const closeStatsModal = document.getElementById('close-stats-modal');
+        const totalStudentsEl = document.getElementById('total-students');
+        const totalSectionsEl = document.getElementById('total-sections');
+        const avgProgressEl = document.getElementById('avg-progress');
+        const completedStudentsEl = document.getElementById('completed-students');
+        const statsSectionHeaders = document.getElementById('stats-section-headers');
+        const statsTableBody = document.getElementById('stats-table-body');
+        
+        // 初始化页面
+        function init() {
+            // 从本地存储加载数据
+            loadData();
+            // 更新部分目录和名称显示
+            updateSectionDirectory();
+            updateSectionNameDisplay();
+            // 渲染表格
+            renderTable();
+            // 绑定事件
+            bindEvents();
+        }
+        
+        // 从本地存储加载数据
+        function loadData() {
+            const savedStudents = localStorage.getItem('ebbinghaus_students');
+            const savedRecords = localStorage.getItem('ebbinghaus_records');
+            const savedSectionNames = localStorage.getItem('ebbinghaus_section_names');
+            const savedTotalSections = localStorage.getItem('ebbinghaus_total_sections');
+            
+            if (savedStudents) {
+                students = JSON.parse(savedStudents);
+            }
+            
+            if (savedRecords) {
+                reviewRecords = JSON.parse(savedRecords);
+            }
+            
+            if (savedSectionNames) {
+                sectionNames = JSON.parse(savedSectionNames);
+            }
+            
+            if (savedTotalSections) {
+                totalSections = parseInt(savedTotalSections);
+            }
+        }
+        
+        // 保存数据到本地存储
+        function saveData() {
+            localStorage.setItem('ebbinghaus_students', JSON.stringify(students));
+            localStorage.setItem('ebbinghaus_records', JSON.stringify(reviewRecords));
+            localStorage.setItem('ebbinghaus_section_names', JSON.stringify(sectionNames));
+            localStorage.setItem('ebbinghaus_total_sections', totalSections.toString());
+        }
+        
+        // 格式化日期为 YYYY-MM-DD
+        function formatDate(date) {
+            if (!date) return '';
+            const d = new Date(date);
+            const year = d.getFullYear();
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+        
+        // 计算指定日期增加n天后的日期
+        function addDays(dateStr, days) {
+            if (!dateStr) return '';
+            const date = new Date(dateStr);
+            date.setDate(date.getDate() + days);
+            return formatDate(date);
+        }
+        
+        // 获取学生某部分的记录
+        function getStudentRecord(student, section) {
+            if (!reviewRecords[student]) {
+                reviewRecords[student] = {};
+            }
+            if (!reviewRecords[student][section]) {
+                reviewRecords[student][section] = {
+                    firstDate: '',
+                    records: new Array(6).fill(0)
+                };
+            }
+            return reviewRecords[student][section];
+        }
+        
+        // 批量设置所有学生第一遍时间
+        function batchSetFirstDate() {
+            const date = batchFirstDate.value;
+            if (!date) {
+                alert('请选择日期！');
+                return;
+            }
+            
+            if (confirm(`确定要将当前部分所有学生的第一遍背诵时间设置为 ${date} 吗？`)) {
+                students.forEach(student => {
+                    const record = getStudentRecord(student, currentSection);
+                    record.firstDate = date;
+                });
+                saveData();
+                renderTable();
+                alert('批量设置成功！');
+            }
+        }
+        
+        // 更新部分目录显示
+        function updateSectionDirectory() {
+            sectionTags.innerHTML = '';
+            
+            // 生成所有部分的标签
+            for (let i = 1; i <= totalSections; i++) {
+                const tag = document.createElement('div');
+                tag.className = `section-tag ${i === currentSection ? 'active' : ''}`;
+                tag.dataset.section = i;
+                tag.textContent = sectionNames[i] || `部分 ${i}`;
+                
+                // 点击切换部分
+                tag.addEventListener('click', () => {
+                    if (isEditMode || students.length === 0) {
+                        currentSection = i;
+                        updateSectionDirectory();
+                        updateSectionNameDisplay();
+                        renderTable();
+                    } else {
+                        alert('请先进入编辑模式切换部分！');
+                    }
+                });
+                
+                sectionTags.appendChild(tag);
+            }
+        }
+        
+        // 更新部分名称显示
+        function updateSectionNameDisplay() {
+            const sectionName = sectionNames[currentSection] || `未命名部分 ${currentSection}`;
+            currentSectionDisplay.textContent = sectionName;
+            sectionNameInput.value = sectionNames[currentSection] || '';
+        }
+        
+        // 保存当前部分名称
+        function saveSectionName() {
+            const name = sectionNameInput.value.trim();
+            if (!name) {
+                alert('请输入部分名称！');
+                return;
+            }
+            
+            sectionNames[currentSection] = name;
+            saveData();
+            updateSectionDirectory();
+            updateSectionNameDisplay();
+            alert('部分名称保存成功！');
+        }
+        
+        // 新增单词部分
+        function addNewSection() {
+            totalSections++;
+            currentSection = totalSections;
+            saveData();
+            updateSectionDirectory();
+            updateSectionNameDisplay();
+            renderTable();
+        }
+        
+        // 打开日期选择弹窗
+        function openDatePickerModal(student, section) {
+            currentDatePickerStudent = student;
+            currentDatePickerSection = section;
+            
+            // 获取学生原本的日期并保存
+            const record = getStudentRecord(student, section);
+            currentStudentOriginalDate = record.firstDate;
+            
+            // 设置默认日期：优先使用学生原本的日期，无则使用今日
+            const defaultDate = currentStudentOriginalDate || formatDate(new Date());
+            selectedDateInput.value = defaultDate;
+            
+            datePickerModal.style.display = 'flex';
+        }
+        
+        // 确认选择日期
+        function confirmSelectedDate(markAsCompleted = false) {
+            const date = selectedDateInput.value;
+            if (!date) {
+                alert('请选择日期！');
+                return;
+            }
+            
+            // 更新学生记录：使用选择的日期（而非重置为今日）
+            const record = getStudentRecord(currentDatePickerStudent, currentDatePickerSection);
+            record.firstDate = date;
+            
+            // 如果需要标记完成
+            if (markAsCompleted) {
+                record.records[0] = 1;
+            }
+            
+            saveData();
+            datePickerModal.style.display = 'none';
+            renderTable();
+        }
+        
+        // 计算学生完成情况统计
+        function calculateStats() {
+            const stats = {
+                totalStudents: students.length,
+                totalSections: totalSections,
+                totalTasks: students.length * totalSections * 6,
+                completedTasks: 0,
+                completedStudents: 0
+            };
+            
+            // 每个学生的详细统计
+            const studentStats = [];
+            
+            students.forEach(student => {
+                let studentCompleted = 0;
+                let studentTotal = 0;
+                const sectionProgress = {};
+                
+                // 计算每个部分的完成情况
+                for (let section = 1; section <= totalSections; section++) {
+                    const record = getStudentRecord(student, section);
+                    const completedCount = record.records.reduce((sum, val) => sum + val, 0);
+                    
+                    sectionProgress[section] = {
+                        completed: completedCount,
+                        total: 6,
+                        progress: completedCount / 6 * 100
+                    };
+                    
+                    studentCompleted += completedCount;
+                    studentTotal += 6;
+                }
+                
+                // 计算学生整体进度
+                const studentProgress = studentTotal > 0 ? (studentCompleted / studentTotal * 100).toFixed(1) : 0;
+                const isFullyCompleted = studentCompleted === studentTotal && studentTotal > 0;
+                
+                if (isFullyCompleted) {
+                    stats.completedStudents++;
+                }
+                
+                stats.completedTasks += studentCompleted;
+                
+                studentStats.push({
+                    name: student,
+                    sectionProgress: sectionProgress,
+                    totalCompleted: studentCompleted,
+                    totalTasks: studentTotal,
+                    progress: studentProgress,
+                    isFullyCompleted: isFullyCompleted
+                });
+            });
+            
+            // 计算平均进度
+            stats.avgProgress = stats.totalTasks > 0 ? (stats.completedTasks / stats.totalTasks * 100).toFixed(1) : 0;
+            
+            return {
+                summary: stats,
+                details: studentStats
+            };
+        }
+        
+        // 显示完成情况统计
+        function showStats() {
+            if (students.length === 0) {
+                alert('暂无学生数据，无法查看统计！');
+                return;
+            }
+            
+            const stats = calculateStats();
+            
+            // 更新统计概览
+            totalStudentsEl.textContent = stats.summary.totalStudents;
+            totalSectionsEl.textContent = stats.summary.totalSections;
+            avgProgressEl.textContent = `${stats.summary.avgProgress}%`;
+            completedStudentsEl.textContent = stats.summary.completedStudents;
+            
+            // 生成部分表头
+            statsSectionHeaders.innerHTML = '';
+            for (let section = 1; section <= totalSections; section++) {
+                const th = document.createElement('th');
+                th.textContent = sectionNames[section] || `部分 ${section}`;
+                statsSectionHeaders.appendChild(th);
+            }
+            
+            // 生成学生统计行
+            statsTableBody.innerHTML = '';
+            stats.details.forEach(studentStat => {
+                const tr = document.createElement('tr');
+                
+                // 学生姓名
+                const nameTd = document.createElement('td');
+                nameTd.textContent = studentStat.name;
+                nameTd.style.fontWeight = 'bold';
+                tr.appendChild(nameTd);
+                
+                // 每个部分的完成情况
+                for (let section = 1; section <= totalSections; section++) {
+                    const sectionStat = studentStat.sectionProgress[section];
+                    const td = document.createElement('td');
+                    
+                    td.textContent = `${sectionStat.completed}/6`;
+                    td.className = `progress-${sectionStat.completed}`;
+                    td.title = `完成率：${sectionStat.progress.toFixed(1)}%`;
+                    
+                    tr.appendChild(td);
+                }
+                
+                // 完成进度
+                const progressTd = document.createElement('td');
+                progressTd.textContent = `${studentStat.progress}%`;
+                progressTd.style.fontWeight = 'bold';
+                if (studentStat.isFullyCompleted) {
+                    progressTd.style.backgroundColor = '#e1f5fe';
+                    progressTd.style.color = '#409eff';
+                }
+                
+                tr.appendChild(progressTd);
+                
+                statsTableBody.appendChild(tr);
+            });
+            
+            // 显示统计弹窗
+            statsModal.style.display = 'flex';
+        }
+        
+        // 渲染表格
+        function renderTable() {
+            tableBody.innerHTML = '';
+            
+            // 设置只读/编辑样式
+            if (isEditMode) {
+                tableBody.classList.remove('read-only');
+                editStatus.className = 'edit-status status-edit';
+                editStatus.textContent = '当前为编辑模式，可修改背诵记录和时间';
+                editModeBtn.textContent = '退出编辑';
+                batchSetContainer.style.display = 'flex';
+                // 启用按钮
+                saveSectionNameBtn.disabled = false;
+                addSectionBtn.disabled = false;
+            } else {
+                tableBody.classList.add('read-only');
+                editStatus.className = 'edit-status status-view';
+                editStatus.textContent = '当前为查看模式，点击"编辑模式"按钮并输入密码可修改记录';
+                editModeBtn.textContent = '编辑模式';
+                batchSetContainer.style.display = 'none';
+                // 禁用按钮
+                saveSectionNameBtn.disabled = true;
+                addSectionBtn.disabled = true;
+            }
+            
+            // 如果没有学生，显示提示
+            if (students.length === 0) {
+                const emptyRow = document.createElement('tr');
+                emptyRow.innerHTML = `<td colspan="7">暂无学生数据，请点击右上角"导入学生"按钮添加</td>`;
+                tableBody.appendChild(emptyRow);
+                return;
+            }
+            
+            // 渲染每个学生的行
+            students.forEach(student => {
+                const row = document.createElement('tr');
+                row.dataset.student = student;
+                
+                // 学生姓名单元格
+                const nameCell = document.createElement('td');
+                nameCell.textContent = student;
+                nameCell.style.fontWeight = 'bold';
+                nameCell.className = 'name-cell';
+                row.appendChild(nameCell);
+                
+                // 获取该学生当前部分的记录
+                const studentRecord = getStudentRecord(student, currentSection);
+                const firstDate = studentRecord.firstDate;
+                
+                // 生成6个背诵遍数的单元格
+                for (let i = 1; i <= 6; i++) {
+                    const cell = document.createElement('td');
+                    const isCompleted = studentRecord.records[i-1];
+                    
+                    if (i === 1) {
+                        // 第一遍：日期选择按钮
+                        if (isEditMode) {
+                            // 显示日期选择按钮
+                            const btnText = firstDate ? `已选：${firstDate}` : '选择日期';
+                            cell.innerHTML = `<button class="date-picker-btn" data-student="${student}" data-section="${currentSection}">${btnText}</button>`;
+                            
+                            // 绑定按钮点击事件
+                            cell.querySelector('button').addEventListener('click', function() {
+                                openDatePickerModal(this.dataset.student, this.dataset.section);
+                            });
+                        } else {
+                            cell.textContent = firstDate || '未输入';
+                        }
+                        
+                        // 添加完成标记
+                        if (isCompleted) {
+                            if (isEditMode) {
+                                cell.querySelector('button').textContent += ' 1';
+                            } else {
+                                cell.textContent = (firstDate || '未输入') + ' 1';
+                            }
+                            cell.classList.add('completed');
+                        }
+                    } else {
+                        // 第2-6遍：显示计算后的日期 + 数字完成标记
+                        let displayText = '';
+                        let daysToAdd = [1,2,7,15,30][i-2]; // 对应第2-6遍需要增加的天数
+                        const targetDate = addDays(firstDate, daysToAdd);
+                        
+                        if (firstDate) {
+                            displayText = targetDate;
+                            // 显示数字完成标记
+                            if (isCompleted) {
+                                displayText += ` ${i}`;
+                                cell.classList.add('completed');
+                            }
+                        } else {
+                            displayText = '请先输入第一遍时间';
+                        }
+                        
+                        cell.textContent = displayText;
+                        
+                        // 编辑模式下可点击切换打卡状态
+                        if (isEditMode && firstDate) {
+                            cell.addEventListener('click', () => {
+                                studentRecord.records[i-1] = studentRecord.records[i-1] ? 0 : 1;
+                                saveData();
+                                renderTable();
+                            });
+                        }
+                    }
+                    
+                    row.appendChild(cell);
+                }
+                
+                // 点击整行查看学生详情（非编辑模式）
+                if (!isEditMode) {
+                    row.addEventListener('click', (e) => {
+                        if (e.target.tagName === 'TD') {
+                            showStudentDetail(student);
+                        }
+                    });
+                }
+                
+                tableBody.appendChild(row);
+            });
+        }
+        
+        // 显示学生详情
+        function showStudentDetail(student) {
+            let detailHTML = `<h3>${student} 同学的单词背诵详情</h3>`;
+            
+            // 生成每个部分的背诵情况
+            for (let section = 1; section <= totalSections; section++) {
+                const sectionName = sectionNames[section] || `未命名部分 ${section}`;
+                const studentRecord = getStudentRecord(student, section);
+                const firstDate = studentRecord.firstDate;
+                
+                detailHTML += `<h4>${sectionName}</h4>`;
+                detailHTML += `<table style="width:100%;">`;
+                detailHTML += `<tr>
+                    <th>第1遍</th>
+                    <th>第2遍</th>
+                    <th>第3遍</th>
+                    <th>第4遍</th>
+                    <th>第5遍</th>
+                    <th>第6遍</th>
+                </tr>`;
+                detailHTML += `<tr>`;
+                
+                for (let i = 1; i <= 6; i++) {
+                    let cellContent = '';
+                    const isCompleted = studentRecord.records[i-1];
+                    
+                    if (i === 1) {
+                        cellContent = firstDate || '未输入';
+                    } else {
+                        let daysToAdd = [1,2,7,15,30][i-2];
+                        const targetDate = addDays(firstDate, daysToAdd);
+                        cellContent = firstDate ? targetDate : '未设置';
+                    }
+                    
+                    // 显示数字标记
+                    cellContent += isCompleted ? ` ${i} ✅` : ' ❌';
+                    detailHTML += `<td style="background-color: ${isCompleted ? '#e1f5fe' : '#fff'}">${cellContent}</td>`;
+                }
+                
+                detailHTML += `</tr></table><br>`;
+            }
+            
+            studentDetail.innerHTML = detailHTML;
+            studentModal.style.display = 'flex';
+        }
+        
+        // 导入学生
+        function importStudents() {
+            const input = studentListInput.value.trim();
+            importSuccess.style.display = 'none';
+            importError.style.display = 'none';
+            
+            if (!input) {
+                importError.style.display = 'block';
+                return;
+            }
+            
+            // 按行分割，过滤空行
+            const newStudents = input.split('\n')
+                .map(name => name.trim())
+                .filter(name => name);
+            
+            if (newStudents.length === 0) {
+                importError.style.display = 'block';
+                return;
+            }
+            
+            students = newStudents;
+            saveData();
+            renderTable();
+            updateSectionDirectory();
+            importSuccess.style.display = 'block';
+            
+            // 3秒后关闭弹窗
+            setTimeout(() => {
+                importModal.style.display = 'none';
+            }, 2000);
+            
+            // 清空输入框
+            setTimeout(() => {
+                studentListInput.value = '';
+            }, 3000);
+        }
+        
+        // 切换编辑模式
+        function toggleEditMode() {
+            if (isEditMode) {
+                // 退出编辑模式
+                isEditMode = false;
+                renderTable();
+                updateSectionDirectory();
+            } else {
+                // 打开密码弹窗
+                passwordModal.style.display = 'flex';
+                passwordInput.value = '';
+                passwordError.style.display = 'none';
+            }
+        }
+        
+        // 验证密码
+        function verifyPassword() {
+            const password = passwordInput.value;
+            if (password === EDIT_PASSWORD) {
+                isEditMode = true;
+                passwordModal.style.display = 'none';
+                renderTable();
+                updateSectionDirectory();
+            } else {
+                passwordError.style.display = 'block';
+                passwordInput.value = '';
+            }
+        }
+        
+        // 绑定事件
+        function bindEvents() {
+            // 批量设置第一遍时间
+            batchSetBtn.addEventListener('click', batchSetFirstDate);
+            
+            // 保存部分名称
+            saveSectionNameBtn.addEventListener('click', saveSectionName);
+            
+            // 新增部分
+            addSectionBtn.addEventListener('click', addNewSection);
+            
+            // 关闭学生详情弹窗
+            closeModal.addEventListener('click', () => {
+                studentModal.style.display = 'none';
+            });
+            
+            // 点击弹窗外区域关闭学生详情
+            studentModal.addEventListener('click', (e) => {
+                if (e.target === studentModal) {
+                    studentModal.style.display = 'none';
+                }
+            });
+            
+            // 编辑模式按钮
+            editModeBtn.addEventListener('click', toggleEditMode);
+            
+            // 密码确认按钮
+            confirmPasswordBtn.addEventListener('click', verifyPassword);
+            
+            // 关闭密码弹窗
+            closePasswordModal.addEventListener('click', () => {
+                passwordModal.style.display = 'none';
+            });
+            
+            // 点击弹窗外区域关闭密码弹窗
+            passwordModal.addEventListener('click', (e) => {
+                if (e.target === passwordModal) {
+                    passwordModal.style.display = 'none';
+                }
+            });
+            
+            // 密码输入框回车验证
+            passwordInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    verifyPassword();
+                }
+            });
+            
+            // 导入学生按钮
+            importBtn.addEventListener('click', () => {
+                importModal.style.display = 'flex';
+                studentListInput.value = '';
+                importSuccess.style.display = 'none';
+                importError.style.display = 'none';
+            });
+            
+            // 关闭导入学生弹窗
+            closeImportModal.addEventListener('click', () => {
+                importModal.style.display = 'none';
+            });
+            
+            // 点击弹窗外区域关闭导入弹窗
+            importModal.addEventListener('click', (e) => {
+                if (e.target === importModal) {
+                    importModal.style.display = 'none';
+                }
+            });
+            
+            // 确认导入学生
+            confirmImportBtn.addEventListener('click', importStudents);
+            
+            // 导入学生输入框回车
+            studentListInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter' && e.ctrlKey) {
+                    importStudents();
+                }
+            });
+            
+            // 日期选择弹窗事件
+            confirmDateBtn.addEventListener('click', () => confirmSelectedDate(false));
+            confirmDateAndMarkBtn.addEventListener('click', () => confirmSelectedDate(true));
+            closeDateModal.addEventListener('click', () => {
+                datePickerModal.style.display = 'none';
+            });
+            // 点击弹窗外区域关闭日期弹窗
+            datePickerModal.addEventListener('click', (e) => {
+                if (e.target === datePickerModal) {
+                    datePickerModal.style.display = 'none';
+                }
+            });
+            
+            // 统计弹窗事件
+            viewStatsBtn.addEventListener('click', showStats);
+            closeStatsModal.addEventListener('click', () => {
+                statsModal.style.display = 'none';
+            });
+            // 点击弹窗外区域关闭统计弹窗
+            statsModal.addEventListener('click', (e) => {
+                if (e.target === statsModal) {
+                    statsModal.style.display = 'none';
+                }
+            });
+        }
+        
+        // 页面加载完成后初始化
+        window.onload = init;
+    </script>
+</body>
+</html>
